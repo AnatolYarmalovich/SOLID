@@ -1,4 +1,4 @@
-/// Copyright (c) 2021 Razeware LLC
+/// Copyright (c) 2022 Razeware LLC
 /// 
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -31,57 +31,53 @@
 /// THE SOFTWARE.
 
 import CoreData
-import Combine
 
-class DailyReportsDataSource: ObservableObject {
-  var viewContext: NSManagedObjectContext
+struct PersistenceController {
 
-  @Published private(set) var currentEntries: [ExpenseModel] = []
+  static let shared = PersistenceController()
 
-  init(viewContext: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
-    self.viewContext = viewContext
-    prepare()
+  let container: NSPersistentContainer
+
+  init(inMemory: Bool = false) {
+    container = NSPersistentContainer(name: "ExpensesModel")
+    if inMemory {
+      container.persistentStoreDescriptions.first?.url = URL(filePath: "/dev/null")
+    }
+    container.loadPersistentStores { _, error in
+      if let error = error as? NSError {
+        fatalError("Unresolved error \(error), \(error.userInfo)")
+      }
+    }
   }
 
-  func prepare() {
-    currentEntries = getEntries()
-  }
-
-  private func getEntries() -> [ExpenseModel] {
-    let fetchRequest: NSFetchRequest<ExpenseModel> = ExpenseModel.fetchRequest()
-    fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ExpenseModel.date, ascending: false)]
-    fetchRequest.predicate = NSPredicate(
-      format: "%@ <= date AND date <= %@",
-      Date().startOfDay as CVarArg,
-      Date().endOfDay as CVarArg)
+  static var preview: PersistenceController = {
+    let result = PersistenceController(inMemory: true)
+    let viewContext = result.container.viewContext
+    for index in 1..<6 {
+      let newItem = ExpenseModel(context: viewContext)
+      newItem.title = "Test Title \(index)"
+      newItem.date = Date(timeIntervalSinceNow: Double(index * -60))
+      newItem.comment = "Test Comment \(index)"
+      newItem.price = Double(index + 1) * 12.3
+      newItem.id = UUID()
+    }
     do {
-      let results = try viewContext.fetch(fetchRequest)
-      return results
-    } catch let error {
-      print(error)
-      return []
+      try viewContext.save()
+    } catch {
+      let nsError = error as NSError
+      fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
     }
-  }
+    return result
+  }()
 
-  func saveEntry(title: String, price: Double, date: Date, comment: String) {
-    let newItem = ExpenseModel(context: viewContext)
-    newItem.title = title
-    newItem.date = date
-    newItem.comment = comment
-    newItem.price = price
+  static let previewItem: ExpenseModel = {
+    let newItem = ExpenseModel(context: preview.container.viewContext)
+    newItem.title = "Preview Item Title"
+    newItem.date = Date(timeIntervalSinceNow: 60)
+    newItem.comment = "Preview Item Comment"
+    newItem.price = 12.34
     newItem.id = UUID()
+    return newItem
+  }()
 
-    if let index = currentEntries.firstIndex(where: { $0.date ?? Date() < date }) {
-      currentEntries.insert(newItem, at: index)
-    } else {
-      currentEntries.append(newItem)
-    }
-
-    try? viewContext.save()
-  }
-
-  func delete(entry: ExpenseModel) {
-    viewContext.delete(entry)
-    try? viewContext.save()
-  }
 }
