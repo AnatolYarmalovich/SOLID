@@ -1,4 +1,4 @@
-/// Copyright (c) 2021 Razeware LLC
+/// Copyright (c) 2022 Razeware LLC
 /// 
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -30,23 +30,12 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-import Foundation
-import CoreData
+import Combine
+import Foundation.NSDate
 
-
-extension ExpenseModel {
-  @nonobjc
-  public class func fetchRequest() -> NSFetchRequest<ExpenseModel> {
-    return NSFetchRequest<ExpenseModel>(entityName: "ExpenseModel")
+class ReportReader: ObservableObject {
+  @Published var currentEntries: [ExpenseModelProtocol] = []
+  func prepare() {
+    assertionFailure("Missing override: Please override this method in the subclass")
   }
-
-  @NSManaged public var title: String?
-  @NSManaged public var price: Double
-  @NSManaged public var comment: String?
-  @NSManaged public var date: Date?
-  @NSManaged public var id: UUID?
 }
-
-extension ExpenseModel: Identifiable {
-}
-extension ExpenseModel: ExpenseModelProtocol {}

@@ -33,25 +33,24 @@
 import CoreData
 import Combine
 
-class ReportsDataSource: ObservableObject {
+class ReportsDataSource: ReportReader, SaveEntryProtocol {
   var viewContext: NSManagedObjectContext
 
   let reportRange: ReportRange
-
-  @Published private(set) var currentEntries: [ExpenseModel] = []
 
   init(viewContext: NSManagedObjectContext = PersistenceController.shared.container.viewContext,
        reportRange: ReportRange) {
     self.viewContext = viewContext
     self.reportRange = reportRange
+    super.init()
     prepare()
   }
 
-  func prepare() {
+  override func prepare() {
     currentEntries = getEntries()
   }
 
-  private func getEntries() -> [ExpenseModel] {
+  private func getEntries() -> [ExpenseModelProtocol] {
     let fetchRequest: NSFetchRequest<ExpenseModel> = ExpenseModel.fetchRequest()
     fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ExpenseModel.date, ascending: false)]
 
@@ -70,7 +69,7 @@ class ReportsDataSource: ObservableObject {
     }
   }
 
-  func saveEntry(title: String, price: Double, date: Date, comment: String) {
+  func saveEntry(title: String, price: Double, date: Date, comment: String) -> Bool {
     let newItem = ExpenseModel(context: viewContext)
     newItem.title = title
     newItem.date = date
@@ -85,6 +84,8 @@ class ReportsDataSource: ObservableObject {
     }
 
     try? viewContext.save()
+
+    return true
   }
 
   func delete(entry: ExpenseModel) {

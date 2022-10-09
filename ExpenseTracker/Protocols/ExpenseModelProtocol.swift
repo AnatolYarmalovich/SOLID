@@ -1,4 +1,4 @@
-/// Copyright (c) 2021 Razeware LLC
+/// Copyright (c) 2022 Razeware LLC
 /// 
 /// Permission is hereby granted, free of charge, to any person obtaining a copy
 /// of this software and associated documentation files (the "Software"), to deal
@@ -31,22 +31,11 @@
 /// THE SOFTWARE.
 
 import Foundation
-import CoreData
 
-
-extension ExpenseModel {
-  @nonobjc
-  public class func fetchRequest() -> NSFetchRequest<ExpenseModel> {
-    return NSFetchRequest<ExpenseModel>(entityName: "ExpenseModel")
-  }
-
-  @NSManaged public var title: String?
-  @NSManaged public var price: Double
-  @NSManaged public var comment: String?
-  @NSManaged public var date: Date?
-  @NSManaged public var id: UUID?
+protocol ExpenseModelProtocol {
+  var id: UUID? { get }
+  var title: String? { get }
+  var price: Double { get }
+  var comment: String? { get }
+  var date: Date? { get }
 }
-
-extension ExpenseModel: Identifiable {
-}
-extension ExpenseModel: ExpenseModelProtocol {}
